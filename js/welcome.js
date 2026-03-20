@@ -1,6 +1,11 @@
 const EFFECT_KEY = 'welcome-gradient-effect-played-v2';
+const ENTRY_SCROLL_KEY = 'welcome-entry-scroll-applied-v1';
 
 const forcePageTopOnEntry = () => {
+    if (sessionStorage.getItem(ENTRY_SCROLL_KEY) === '1') {
+        return;
+    }
+
     if ('scrollRestoration' in history) {
         history.scrollRestoration = 'manual';
     }
@@ -10,6 +15,7 @@ const forcePageTopOnEntry = () => {
     }
 
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    sessionStorage.setItem(ENTRY_SCROLL_KEY, '1');
 };
 
 const canUseStorage = () => {
@@ -80,13 +86,20 @@ const initMobileCarousels = () => {
         let counter = null;
 
         const getActiveIndex = () => {
-            const cardWidth = cards[0].getBoundingClientRect().width;
+            const currentLeft = carousel.scrollLeft;
+            let closestIndex = 0;
+            let smallestDistance = Number.POSITIVE_INFINITY;
 
-            if (cardWidth <= 0) {
-                return 0;
-            }
+            cards.forEach((card, index) => {
+                const distance = Math.abs(card.offsetLeft - currentLeft);
 
-            return Math.min(cards.length - 1, Math.max(0, Math.round(carousel.scrollLeft / cardWidth)));
+                if (distance < smallestDistance) {
+                    smallestDistance = distance;
+                    closestIndex = index;
+                }
+            });
+
+            return closestIndex;
         };
 
         const setActiveDot = (index) => {
@@ -100,7 +113,7 @@ const initMobileCarousels = () => {
         };
 
         const scrollToIndex = (index) => {
-            cards[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+            carousel.scrollTo({ left: cards[index].offsetLeft, behavior: 'smooth' });
             setActiveDot(index);
         };
 
@@ -199,5 +212,3 @@ if (document.readyState === 'loading') {
 } else {
     initWelcomePage();
 }
-
-window.addEventListener('pageshow', forcePageTopOnEntry);
